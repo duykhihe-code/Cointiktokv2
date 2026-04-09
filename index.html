@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TikTok Recharge Interface</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Đổi màu nền ngoài cùng thành trắng */
+        body { background-color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        
+        .app-container { width: 100%; max-width: 400px; background-color: #ffffff; height: 100dvh; display: flex; flex-direction: column; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.1); overflow: hidden; }
+        
+        .scroll-content { flex-grow: 1; overflow-y: auto; overflow-x: hidden; padding-bottom: 20px; background-color: #ffffff; }
+        .scroll-content::-webkit-scrollbar { display: none; }
+        .scroll-content { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .tiktok-red { background-color: #FE2C55; } 
+        .tiktok-red-text { color: #FE2C55; }
+        
+        .pack-option { transition: all 0.2s ease; }
+        .pack-selected { border-color: #FE2C55 !important; background-color: #fff0f3 !important; }
+        .pack-selected .pack-price { color: #FE2C55 !important; }
+        
+        .modal-overlay { background-color: rgba(0, 0, 0, 0.5); }
+
+        /* Vòng xoay loading Tiktok */
+        .tiktok-loader { position: relative; width: 40px; height: 24px; margin-bottom: 1.5rem; }
+        .tk-dot-cyan, .tk-dot-red { position: absolute; width: 18px; height: 18px; border-radius: 50%; top: 50%; margin-top: -9px; mix-blend-mode: multiply; }
+        .tk-dot-cyan { background-color: #25F4EE; left: 0; animation: moveCyan 1s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        .tk-dot-red { background-color: #FE2C55; right: 0; animation: moveRed 1s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes moveCyan { 0%, 100% { transform: translate(0, 0) scale(1); z-index: 1; } 25% { transform: translate(11px, 0) scale(1.2); z-index: 2; } 50% { transform: translate(22px, 0) scale(1); z-index: 1; } 75% { transform: translate(11px, 0) scale(0.8); z-index: 0; } }
+        @keyframes moveRed { 0%, 100% { transform: translate(0, 0) scale(1); z-index: 2; } 25% { transform: translate(-11px, 0) scale(0.8); z-index: 0; } 50% { transform: translate(-22px, 0) scale(1); z-index: 1; } 75% { transform: translate(-11px, 0) scale(1.2); z-index: 2; } }
+
+        /* Custom Radio Button */
+        .custom-radio { width: 22px; height: 22px; border-radius: 50%; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; }
+        input[type="radio"]:checked + .custom-radio { border-color: #FE2C55; }
+        input[type="radio"]:checked + .custom-radio::after { content: ''; width: 12px; height: 12px; background-color: #FE2C55; border-radius: 50%; }
+
+        /* Đồng Coin TikTok (CSS) */
+        .tk-coin { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; background: linear-gradient(135deg, #fde047, #eab308); border-radius: 50%; border: 1px solid #ca8a04; box-shadow: 0 1px 2px rgba(0,0,0,0.15); vertical-align: middle; margin-right: 4px; margin-bottom: 2px; }
+        .tk-coin i { color: white; font-size: 10px; text-shadow: 0 1px 1px rgba(0,0,0,0.2); }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <div id="main-screen" class="flex flex-col h-full w-full absolute inset-0 z-10 bg-white transition-transform duration-300">
+            <div class="scroll-content">
+                <div class="px-4 py-3 flex items-center justify-between border-b border-gray-100 sticky top-0 bg-white z-10">
+                    <div class="w-16"></div>
+                    <h1 class="text-lg font-normal text-gray-800">Get Coins</h1>
+                    <div class="flex gap-4 text-gray-500 text-lg w-16 justify-end cursor-pointer">
+                        <i class="fa-solid fa-ellipsis"></i>
+                        <i class="fa-regular fa-circle-question"></i>
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    </div>
+                </div>
+
+                <div class="p-5 bg-white mb-2">
+                    <div class="flex items-center gap-4 mb-5">
+                        <div class="w-12 h-12 bg-black rounded-full flex items-center justify-center text-white shrink-0">
+                            <i class="fa-brands fa-tiktok text-2xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="font-medium text-gray-800 text-base">Recharge</h2>
+                            <div class="flex items-center gap-1 font-bold text-lg text-gray-900 mt-1">
+                                <span class="tk-coin"><i class="fa-brands fa-tiktok"></i></span>
+                                <span id="main-balance">5.020.500</span>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="text" id="username-input" placeholder="Enter username" value="Ydusi" class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-3 text-sm focus:outline-none focus:border-gray-300 focus:bg-white transition-colors">
+                </div>
+
+                <div class="bg-white pt-4 pb-2">
+                    <div class="px-5 mb-4">
+                        <h3 class="font-medium text-gray-800 text-[15px] mb-1">Recharge</h3>
+                        <p class="text-[11px] text-[#FE2C55] font-medium">Save around 25% with a lower third-party service fee. <i class="fa-regular fa-circle-question text-gray-400 ml-1"></i></p>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-3 px-5 mb-6" id="coin-grid">
+                        <div class="pack-option pack-selected border border-gray-200 rounded-lg p-3 text-center cursor-pointer bg-white" onclick="selectPack(this, 30, 0.31)">
+                            <div class="font-bold flex items-center justify-center text-gray-800 text-base">
+                                <span class="tk-coin"><i class="fa-brands fa-tiktok"></i></span> 30
+                            </div>
+                            <div class="pack-price text-xs text-gray-400 mt-1 font-medium">$0.31</div>
+                        </div>
+
+                        <div class="pack-option border border-gray-200 rounded-lg p-3 text-center cursor-pointer bg-white" onclick="selectPack(this, 350, 3.65)">
+                            <div class="font-bold flex items-center justify-center text-gray-800 text-base">
+                                <span class="tk-coin"><i class="fa-brands fa-tiktok"></i></span> 350
+                            </div>
+                            <div class="pack-price text-xs text-gray-400 mt-1 font-medium">$3.65</div>
+                        </div>
+
+                        <div class="pack-option border border-gray-200 rounded-lg p-3 text-center cursor-pointer bg-white" onclick="selectPack(this, 700, 7.25)">
+                            <div class="font-bold flex items-center justify-center text-gray-800 text-base">
+                                <span class="tk-coin"><i class="fa-brands fa-tiktok"></i></span> 700
+                            </div>
+                            <div class="pack-price text-xs text-gray-400 mt-1 font-medium">$7.25</div>
+                        </div>
+
+                        <div class="pack-option border border-gray-200 rounded-lg p-3 text-center cursor-pointer bg-white" onclick="selectPack(this, 1400, 14.80)">
+                            <div class="font-bold flex items-center justify-center text-gray-800 text-base">
+                                <span class="tk-coin"><i class="fa-brands fa-tiktok"></i></span> 1400
+                            </div>
+                            <div class="pack-price text-xs text-gray-400 mt-1 font-medium">$14.80</div>
+                        </div>
+
+                        <div class="pack-option border border-gray-200 rounded-lg p-3 text-center cursor-pointer bg-white" onclick="selectPack(this, 3500, 36.20)">
+                            <div class="font-bold flex items-center justify-center text-gray-800 text-base">
+                                <span class="tk-coin"><i class="fa-brands fa-tiktok"></i></span> 3500
+                            </div>
+                            <div class="pack-price text-xs text-gray-400 mt-1 font-medium">$36.20</div>
+                        </div>
+
+                        <div class="pack-option border border-gray-200 rounded-lg p-3 text-center cursor-pointer bg-white flex items-center justify-center" onclick="openCustomModal()">
+                            <div class="font-normal text-gray-600 text-sm">Custom</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="px-5 mt-4">
+                    <div class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-gray-50 cursor-pointer shadow-sm">
+                        <div class="flex items-center gap-3.5">
+                            <div class="w-11 h-11 rounded-xl bg-orange-100 flex items-center justify-center text-[#E86020] text-xl">
+                                <i class="fa-solid fa-hands-clapping"></i>
+                            </div>
+                            <div>
+                                <p class="font-bold text-[16px] text-gray-800 tracking-wide">Invite & Get Rewards</p>
+                                <p class="text-[13px] text-gray-500 mt-0.5">Check out this new feature!</p>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-gray-400 text-lg"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="w-full bg-white border-t border-gray-100 p-5 pt-4 rounded-t-xl shrink-0 z-20 shadow-[0_-5px_15px_-10px_rgba(0,0,0,0.1)]">
+                <div class="flex justify-between items-center mb-4 px-1">
+                    <span class="text-[14px] text-gray-500 font-medium tracking-wide">Special offer</span>
+                    <span class="text-[14px] text-[#FE2C55] flex items-center gap-1 font-medium cursor-pointer">Unlock 5% cash back <i class="fa-solid fa-chevron-right text-[11px] mt-[1px]"></i></span>
+                </div>
+                
+                <div class="flex gap-2 justify-center mb-5">
+                    <div class="w-[36px] h-[22px] rounded-[3px] flex items-center justify-center bg-[#1A1F71] text-white text-[10px] font-bold italic tracking-wider">VISA</div>
+                    
+                    <div class="w-[36px] h-[22px] rounded-[3px] flex items-center justify-center bg-[#111111] relative overflow-hidden flex-col">
+                        <div class="flex relative w-full h-[12px] justify-center mt-1">
+                            <div class="w-3.5 h-3.5 rounded-full bg-[#eb001b] absolute" style="left: 7px;"></div>
+                            <div class="w-3.5 h-3.5 rounded-full bg-[#f79e1b] absolute" style="right: 7px; opacity: 0.9;"></div>
+                        </div>
+                        <div class="text-[4px] text-white font-sans mt-[1px] tracking-widest">mastercard</div>
+                    </div>
+
+                    <div class="w-[36px] h-[22px] rounded-[3px] flex items-center justify-center bg-[#007940] text-white text-[11px] font-bold tracking-wider">JCB</div>
+                    
+                    <div class="w-[36px] h-[22px] rounded-[3px] flex flex-col items-center justify-center bg-[#70A8D9] text-[#002663] text-[4.5px] font-bold leading-[1.1] text-center pt-[1px]">
+                        <span>AMERICAN</span><span>EXPRESS</span>
+                    </div>
+
+                    <div class="w-[36px] h-[22px] rounded-[3px] flex items-center justify-center bg-[#B2D8ED] text-[#003087] text-[10px] font-bold italic tracking-tighter">PayPal</div>
+                </div>
+
+                <button onclick="goToSummary()" class="tiktok-red w-full text-white py-3.5 rounded-xl font-bold text-[18px] tracking-wide hover:opacity-90 transition-opacity">
+                    Buy for $ <span id="btn-price">0.31</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="summary-screen" class="hidden absolute inset-0 bg-white z-20 flex flex-col w-full h-full">
+            <div class="px-5 py-4 flex items-center border-b border-gray-100">
+                <i onclick="closeSummary()" class="fa-solid fa-chevron-left text-xl cursor-pointer mr-4 text-black font-bold"></i>
+                <h1 class="text-xl font-bold text-black tracking-wide">Order summary</h1>
+            </div>
+            
+            <div class="px-5 pt-6 flex-grow overflow-y-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-gray-500 text-base">Account</span>
+                    <span class="font-bold text-black text-base" id="summary-account">Ydusi</span>
+                </div>
+                <hr class="border-gray-100 mb-5">
+                <div class="flex justify-between items-center mb-8">
+                    <span class="text-gray-500 text-base" id="summary-coins-text">
+                        <span class="tk-coin"><i class="fa-brands fa-tiktok"></i></span> 1.400 Coins
+                    </span>
+                    <span class="font-bold text-black text-[22px]" id="summary-total-price">$ 14.80</span>
+                </div>
+
+                <h3 class="font-bold text-black text-[15px] mb-4">Select a payment method</h3>
+
+                <div class="space-y-3">
+                    <label class="flex items-center justify-between p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
+                        <div class="flex items-center gap-4">
+                            <div class="w-11 h-7 bg-[#1A1F71] text-white flex items-center justify-center rounded text-[11px] font-bold italic shadow-sm tracking-wide">VISA</div>
+                            <span class="text-black text-base">VISA **** 8888</span>
+                        </div>
+                        <input type="radio" name="payment_method" checked class="hidden">
+                        <div class="custom-radio bg-white"></div>
+                    </label>
+
+                    <label class="flex items-center justify-between p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
+                        <div class="flex items-center gap-4">
+                            <div class="w-11 flex items-center justify-center text-[22px] text-black"><i class="fa-brands fa-apple"></i><span class="text-[14px] font-bold ml-0.5">Pay</span></div>
+                            <span class="text-black text-base">Apple Pay</span>
+                        </div>
+                        <input type="radio" name="payment_method" class="hidden">
+                        <div class="custom-radio bg-white"></div>
+                    </label>
+
+                    <label class="flex items-center justify-between p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
+                        <div class="flex items-center gap-4">
+                            <div class="w-11 flex items-center justify-center text-[#003087] text-[22px] font-bold italic">P<span class="text-[#0079C1]">P</span></div>
+                            <span class="text-black text-base">PayPal</span>
+                        </div>
+                        <input type="radio" name="payment_method" class="hidden">
+                        <div class="custom-radio bg-white"></div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="w-full bg-white border-t border-gray-100 p-4 shrink-0">
+                <button onclick="startPaymentProcess()" class="tiktok-red w-full text-white py-3.5 rounded-xl font-bold text-lg hover:opacity-90 transition-opacity">
+                    Pay now
+                </button>
+            </div>
+        </div>
+
+        <div id="processing-screen" class="hidden absolute inset-0 bg-white z-40 flex flex-col items-center justify-center">
+            <div class="tiktok-loader">
+                <div class="tk-dot-cyan"></div>
+                <div class="tk-dot-red"></div>
+            </div>
+            <p id="processing-text" class="text-lg font-bold text-gray-900 tracking-wide mt-2">Processing your payment</p>
+            <p class="text-[13px] text-gray-500 mt-1">This could take a few seconds</p>
+        </div>
+
+        <div id="success-screen" class="hidden absolute inset-0 bg-white z-50 flex flex-col p-6 items-center justify-center">
+            
+            <div class="w-[85px] h-[85px] bg-[#e6fcf0] text-[#20d571] rounded-full flex items-center justify-center mb-5">
+                <i class="fa-solid fa-check text-[45px]"></i>
+            </div>
+            
+            <h2 class="text-[26px] font-bold mb-4 text-black text-center tracking-tight">Successful recharge!</h2>
+            
+            <div class="text-[#666] text-[16px] text-center mb-8 leading-relaxed">
+                <span id="success-coins" class="text-black font-bold">700</span> Coins were sent to<br>
+                <span id="success-username" class="text-black font-bold">@Ydusi</span>.<br>
+                <span class="text-[#888] text-[14px] inline-block mt-0.5">This operation has been completed.</span>
+            </div>
+
+            <button onclick="returnToHome()" class="tiktok-red w-[95%] text-white py-3.5 rounded-lg font-bold text-[16px] shadow-sm hover:opacity-90 transition-opacity mt-4">Go back</button>
+        </div>
+
+        <div id="custom-modal" class="hidden absolute inset-0 modal-overlay z-50 flex items-end">
+            <div class="bg-white w-full rounded-t-2xl p-6 transform transition-transform duration-300">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-gray-800">Custom</h3>
+                    <i onclick="closeCustomModal()" class="fa-solid fa-xmark text-xl text-gray-400 cursor-pointer hover:text-gray-600"></i>
+                </div>
+                <div class="mb-6">
+                    <p class="text-xs text-gray-500 mb-2">Number of Coins <i class="fa-regular fa-circle-question ml-1"></i></p>
+                    <div class="relative">
+                        <input type="number" id="custom-coin-input" placeholder="30 - 2,500,000" class="w-full border-b border-gray-300 py-2 text-xl font-bold focus:outline-none focus:border-red-500 text-gray-800" oninput="calculateCustomPrice()">
+                        <span class="tk-coin absolute right-2 top-3"><i class="fa-brands fa-tiktok"></i></span>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center mb-6">
+                    <span class="text-gray-400 text-sm">Total</span>
+                    <span class="text-xl font-bold text-gray-800" id="custom-price-display">$0.00</span>
+                </div>
+                <button onclick="confirmCustom()" class="tiktok-red w-full text-white py-3.5 rounded-xl font-bold text-base hover:opacity-90 shadow-md">Confirm</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let totalAccountCoins = 5020500;
+        let currentPrice = "0.31";
+        let currentCoinsStr = "30"; 
+
+        function selectPack(element, coins, price) {
+            const allPacks = document.querySelectorAll('.pack-option');
+            allPacks.forEach(pack => pack.classList.remove('pack-selected'));
+            element.classList.add('pack-selected');
+            
+            currentCoinsStr = Number(coins).toLocaleString('de-DE'); 
+            currentPrice = price;
+            document.getElementById('btn-price').innerText = price;
+        }
+
+        function openCustomModal() { document.getElementById('custom-modal').classList.remove('hidden'); }
+        function closeCustomModal() { document.getElementById('custom-modal').classList.add('hidden'); }
+
+        function calculateCustomPrice() {
+            const input = document.getElementById('custom-coin-input').value;
+            const price = (input * 0.01033).toFixed(2);
+            document.getElementById('custom-price-display').innerText = '$' + (input > 0 ? price : "0.00");
+        }
+
+        function confirmCustom() {
+            const input = document.getElementById('custom-coin-input').value;
+            if(input < 30) { alert("Minimum 30 coins required"); return; }
+            
+            const price = (input * 0.01033).toFixed(2);
+            const allPacks = document.querySelectorAll('.pack-option');
+            allPacks.forEach(pack => pack.classList.remove('pack-selected'));
+            allPacks[allPacks.length - 1].classList.add('pack-selected');
+            
+            currentCoinsStr = Number(input).toLocaleString('de-DE');
+            currentPrice = price;
+            document.getElementById('btn-price').innerText = price;
+            closeCustomModal();
+        }
+
+        function goToSummary() {
+            const username = document.getElementById('username-input').value || "Ydusi";
+            document.getElementById('summary-account').innerText = username;
+            document.getElementById('summary-coins-text').innerHTML = '<span class="tk-coin"><i class="fa-brands fa-tiktok"></i></span> ' + currentCoinsStr + " Coins";
+            document.getElementById('summary-total-price').innerText = "$ " + currentPrice;
+            document.getElementById('summary-screen').classList.remove('hidden');
+        }
+
+        function closeSummary() {
+            document.getElementById('summary-screen').classList.add('hidden');
+        }
+
+        function startPaymentProcess() {
+            document.getElementById('summary-screen').classList.add('hidden');
+            document.getElementById('processing-screen').classList.remove('hidden');
+            
+            setTimeout(() => {
+                document.getElementById('processing-text').innerText = "Checking account security";
+            }, 1500);
+
+            setTimeout(() => {
+                document.getElementById('processing-screen').classList.add('hidden');
+                document.getElementById('success-screen').classList.remove('hidden');
+                
+                // Lấy Tên và Số xu để hiển thị lên màn hình Thành công
+                const username = document.getElementById('username-input').value || "Ydusi";
+                document.getElementById('success-coins').innerText = currentCoinsStr;
+                document.getElementById('success-username').innerText = "@" + username;
+                
+            }, 3500);
+        }
+
+        function returnToHome() {
+            let coinsToDeduct = parseInt(currentCoinsStr.replace(/\./g, ''));
+            totalAccountCoins -= coinsToDeduct;
+            if (totalAccountCoins < 0) totalAccountCoins = 0; 
+            document.getElementById('main-balance').innerText = totalAccountCoins.toLocaleString('de-DE');
+            document.getElementById('success-screen').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
